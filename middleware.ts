@@ -1,48 +1,42 @@
-import { clerkMiddleware ,createRouteMatcher} from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-
- const isPublicRoute = createRouteMatcher([
+const isPublicRoute = createRouteMatcher([
     "/sign-in",
     "/sign-up",
     "/",
     "/home"
- ])
-
- const isPublicApiRoute = createRouteMatcher([
+])
+const isPublicApiRoute = createRouteMatcher([
     "/api/videos"
- ])
+])
 
-export default clerkMiddleware((auth,req)=>{
-    const {userId} = auth()
+
+export default clerkMiddleware((auth, req) => {
+    const {userId} = auth();
     const currentUrl = new URL(req.url)
+     const isAccessingDashboard = currentUrl.pathname === "/home"
+     const isApiRequest = currentUrl.pathname.startsWith("/api")
 
-
-    const isAccessingDashboard = currentUrl.pathname === "home"
-    const isApiRequest = currentUrl.pathname.startsWith("/api") 
-     
-    // logged in case 
-    if(userId && isPublicRoute(req)){
-         return NextResponse.redirect(new URL("/home",req.url))
+     // user is logged in and accessing a public route but not the home page
+    if(userId && isPublicRoute(req) && !isAccessingDashboard) {
+        return NextResponse.redirect(new URL("/home", req.url))
     }
-
-
-    // not logged in and request for protected route
-
+    //user not logged in
     if(!userId){
-        if(!isPublicRoute(req) && isPublicApiRoute(req)){
-             return NextResponse.redirect(new URL("/signin",(req.url)))
+
+        if(!isPublicRoute(req) && !isPublicApiRoute(req) ){
+            return NextResponse.redirect(new URL("/sign-in", req.url))
         }
 
+        
         if(isApiRequest && !isPublicApiRoute(req)){
-            return NextResponse.redirect(new URL("/signin",(req.url)))
+            return NextResponse.redirect(new URL("/sign-in", req.url))
         }
     }
+    return NextResponse.next()
 
-     NextResponse.next()
 })
-
-// matcher basically matches all the routes in it 
 
 export const config = {
   matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
