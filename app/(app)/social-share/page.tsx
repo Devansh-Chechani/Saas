@@ -70,9 +70,12 @@ const socialFormats = {
           .toLowerCase()}.png`;
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
+           // document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
             document.body.removeChild(link);
+
+            
+
         })
     }
 
